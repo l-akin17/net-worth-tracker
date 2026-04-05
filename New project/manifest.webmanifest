@@ -1,0 +1,17 @@
+{
+  "name": "Net Worth Tracker",
+  "short_name": "Tracker",
+  "description": "Track accounts, ISAs, crypto, shares, liabilities, and FX in one installable app.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4e2c6",
+  "theme_color": "#1c67d9",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Net Worth Tracker</title>
+    <meta
+      name="description"
+      content="Track accounts, ISAs, crypto, shares, liabilities, and multi-currency balances with Firebase sync and Netlify hosting."
+    />
+    <meta name="theme-color" content="#1c67d9" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy-block">
+          <p class="eyebrow">Personal Finance Hub</p>
+          <h1>Track cash, ISAs, crypto, shares, debt, and FX in one place.</h1>
+          <p class="hero-copy">
+            Keep the clean monthly-entry workflow you already have, while adding
+            live-priced holdings, currency conversion to GBP, and installable
+            app-style access on phone and desktop.
+          </p>
+        </div>
+
+        <div class="hero-rail">
+          <article class="panel sync-card">
+            <div class="sync-topline">
+              <span id="syncBadge" class="status-pill muted">Local only</span>
+              <button id="syncNowButton" class="button ghost" type="button">Sync now</button>
+            </div>
+            <h2 id="syncTitle">Cloud sync optional</h2>
+            <p id="syncMessage" class="sync-message">
+              The app works locally now. Add Firebase keys to enable secure
+              cross-device syncing.
+            </p>
+          </article>
+
+          <article class="panel sync-card market-card">
+            <div class="sync-topline">
+              <span id="marketBadge" class="status-pill muted">Market idle</span>
+              <button id="refreshMarketButton" class="button ghost" type="button">Refresh prices</button>
+            </div>
+            <h2 id="marketTitle">FX and market data</h2>
+            <p id="marketMessage" class="sync-message">
+              Daily GBP conversion and market prices appear here once Netlify
+              functions are live.
+            </p>
+          </article>
+
+          <div class="hero-actions">
+            <button id="goToEntryButton" class="button primary" type="button">Update month</button>
+            <button id="installAppButton" class="button secondary" type="button">Install app</button>
+            <button id="exportButton" class="button secondary" type="button">Export</button>
+            <button id="importButton" class="button secondary" type="button">Import</button>
+            <input id="importFileInput" type="file" accept=".json" hidden />
+          </div>
+
+          <p id="installHint" class="hero-note">
+            Install to home screen on iPhone or desktop for an app-like
+            experience.
+          </p>
+        </div>
+      </header>
+
+      <nav class="view-switcher" aria-label="Main views">
+        <button id="overviewTab" class="view-tab is-active" type="button">Overview</button>
+        <button id="entryTab" class="view-tab" type="button">Monthly Entry</button>
+      </nav>
+
+      <main>
+        <section id="overviewView" class="view-section">
+          <div class="stats-grid">
+            <article class="panel stat-card">
+              <p class="panel-label">Net worth</p>
+              <h2 id="netWorthValue">£0</h2>
+              <p id="selectedMonthLabel">Selected month</p>
+            </article>
+
+            <article class="panel stat-card">
+              <p class="panel-label">Total assets</p>
+              <h2 id="assetsValue">£0</h2>
+              <p id="assetBreakdownLabel">0 asset lines</p>
+            </article>
+
+            <article class="panel stat-card">
+              <p class="panel-label">Total liabilities</p>
+              <h2 id="liabilitiesValue">£0</h2>
+              <p id="liabilityBreakdownLabel">0 liability lines</p>
+            </article>
+
+            <article class="panel stat-card">
+              <p class="panel-label">Monthly net change</p>
+              <h2 id="monthlyNetChangeValue">£0</h2>
+              <p id="monthlyNetChangeLabel">No prior month yet</p>
+            </article>
+
+            <article class="panel stat-card">
+              <p class="panel-label">Tracked market value</p>
+              <h2 id="marketTrackedValue">£0</h2>
+              <p id="marketTrackedLabel">0 live-priced holdings</p>
+            </article>
+
+            <article class="panel stat-card">
+              <p class="panel-label">FX coverage</p>
+              <h2 id="fxCoverageValue">1</h2>
+              <p id="fxCoverageLabel">GBP only so far</p>
+            </article>
+          </div>
+
+          <div class="charts-grid">
+            <article class="panel chart-panel">
+              <div class="panel-header compact">
+                <div>
+                  <p class="panel-label">Allocation</p>
+                  <h2>Assets by line</h2>
+                </div>
+                <p class="panel-meta">Shown in GBP</p>
+              </div>
+              <canvas id="allocationChart" width="520" height="320" aria-label="Asset allocation chart"></canvas>
+              <div id="allocationLegend" class="legend"></div>
+            </article>
+
+            <article class="panel chart-panel">
+              <div class="panel-header compact">
+                <div>
+                  <p class="panel-label">Trend</p>
+                  <h2>Assets, liabilities, and net worth</h2>
+                </div>
+                <p id="trendMeta" class="panel-meta">Up to 12 months</p>
+              </div>
+              <canvas id="trendChart" width="640" height="320" aria-label="Net worth trend"></canvas>
+            </article>
+          </div>
+
+          <div class="analysis-grid">
+            <article class="panel analysis-panel">
+              <div class="panel-header compact">
+                <div>
+                  <p class="panel-label">Insights</p>
+                  <h2>Portfolio analysis</h2>
+                </div>
+              </div>
+              <ul id="insightsList" class="insights-list"></ul>
+            </article>
+
+            <article class="panel analysis-panel">
+              <div class="panel-header compact">
+                <div>
+                  <p class="panel-label">History</p>
+                  <h2>Recent months</h2>
+                </div>
+              </div>
+              <div id="recentMonthsTable" class="recent-months"></div>
+            </article>
+
+            <article class="panel analysis-panel">
+              <div class="panel-header compact">
+                <div>
+                  <p class="panel-label">ISA Tax Year</p>
+                  <h2>Allowance usage to deadline</h2>
+                </div>
+                <p id="isaDeadlineLabel" class="panel-meta">Tax deadline</p>
+              </div>
+              <div class="isa-summary-grid">
+                <div class="isa-summary-card">
+                  <span class="micro-label">Current ISA balance</span>
+                  <strong id="isaBalanceValue">£0</strong>
+                </div>
+                <div class="isa-summary-card">
+                  <span class="micro-label">Tax-year contributed</span>
+                  <strong id="isaContributionValue">£0</strong>
+                </div>
+                <div class="isa-summary-card">
+                  <span class="micro-label">Allowance remaining</span>
+                  <strong id="isaRemainingValue">£0</strong>
+                </div>
+                <div class="isa-summary-card">
+                  <span class="micro-label">Lifetime ISA used</span>
+                  <strong id="lisaContributionValue">£0</strong>
+                </div>
+              </div>
+              <ul id="isaInsightsList" class="insights-list"></ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="entryView" class="view-section is-hidden">
+          <div class="entry-shell">
+            <aside class="entry-sidebar">
+              <article class="panel sidebar-panel">
+                <div class="panel-header">
+                  <div>
+                    <p class="panel-label">Month</p>
+                    <h2>Monthly entry</h2>
+                  </div>
+                </div>
+
+                <div class="month-controls">
+                  <button id="previousMonthButton" class="button ghost" type="button">Previous</button>
+                  <label class="month-picker">
+                    <span>Selected month</span>
+                    <input id="monthInput" type="month" />
+                  </label>
+                  <button id="nextMonthButton" class="button ghost" type="button">Next</button>
+                </div>
+
+                <div class="entry-microstats">
+                  <div>
+                    <span class="micro-label">Net worth</span>
+                    <strong id="entryNetWorthValue">£0</strong>
+                  </div>
+                  <div>
+                    <span class="micro-label">Assets</span>
+                    <strong id="entryAssetsValue">£0</strong>
+                  </div>
+                  <div>
+                    <span class="micro-label">Liabilities</span>
+                    <strong id="entryLiabilitiesValue">£0</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article class="panel sidebar-panel">
+                <div class="panel-header compact">
+                  <div>
+                    <p class="panel-label">Add line</p>
+                    <h2>New account, holding, or debt</h2>
+                  </div>
+                </div>
+
+                <form id="addLineForm" class="stack-form">
+                  <div class="field">
+                    <label for="lineName">Name</label>
+                    <input id="lineName" type="text" placeholder="e.g. Vanguard S&P 500 ETF" required />
+                  </div>
+
+                  <div class="field split-field">
+                    <div>
+                      <label for="lineKind">Kind</label>
+                      <select id="lineKind"></select>
+                    </div>
+                    <div>
+                      <label for="lineType">Type</label>
+                      <select id="lineType"></select>
+                    </div>
+                  </div>
+
+                  <div class="field split-field">
+                    <div>
+                      <label for="lineCurrency">Currency</label>
+                      <select id="lineCurrency"></select>
+                    </div>
+                    <div>
+                      <label for="lineColor">Colour</label>
+                      <input id="lineColor" type="color" value="#1c67d9" />
+                    </div>
+                  </div>
+
+                  <div id="valuationModeField" class="field">
+                    <label for="lineValuationMode">Value type</label>
+                    <select id="lineValuationMode">
+                      <option value="manual">Manual balance</option>
+                      <option value="market">Live-priced holding</option>
+                    </select>
+                  </div>
+
+                  <div id="marketFields" class="field split-field">
+                    <div>
+                      <label for="marketSource">Market source</label>
+                      <select id="marketSource">
+                        <option value="crypto">Crypto</option>
+                        <option value="stock">Share / ETF</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label for="marketSymbol">Ticker / coin code</label>
+                      <input id="marketSymbol" type="text" placeholder="e.g. BTC or AAPL" />
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <label for="lineStartingValue" id="lineStartingValueLabel">Opening balance</label>
+                    <input id="lineStartingValue" type="number" step="0.000001" value="0" />
+                  </div>
+
+                  <button class="button primary full-width" type="submit">Add line</button>
+                </form>
+              </article>
+
+              <article class="panel sidebar-panel">
+                <div class="panel-header compact">
+                  <div>
+                    <p class="panel-label">Market refresh</p>
+                    <h2>Daily prices and FX</h2>
+                  </div>
+                </div>
+
+                <p id="marketSummary" class="setup-note">
+                  Pulls Bank of England GBP rates plus free crypto/share market
+                  data when available.
+                </p>
+
+                <div class="auth-actions">
+                  <button id="refreshMarketButtonSecondary" class="button primary" type="button">
+                    Refresh now
+                  </button>
+                  <button id="openOverviewButton" class="button secondary" type="button">
+                    View insights
+                  </button>
+                </div>
+
+                <ul id="marketWarningsList" class="mini-list"></ul>
+              </article>
+
+              <article class="panel sidebar-panel">
+                <div class="panel-header compact">
+                  <div>
+                    <p class="panel-label">Cloud sync</p>
+                    <h2>Account access</h2>
+                  </div>
+                </div>
+
+                <div id="cloudSetupNotice" class="setup-note">
+                  Add your Firebase web app keys in
+                  <code>firebase-config.js</code> to enable secure syncing.
+                </div>
+
+                <form id="authForm" class="stack-form">
+                  <div class="field">
+                    <label for="authEmail">Email</label>
+                    <input id="authEmail" type="email" placeholder="name@example.com" />
+                  </div>
+
+                  <div class="field">
+                    <label for="authPassword">Password</label>
+                    <input id="authPassword" type="password" placeholder="At least 6 characters" />
+                  </div>
+
+                  <div class="auth-actions">
+                    <button id="signInButton" class="button primary" type="submit">Sign in</button>
+                    <button id="createAccountButton" class="button secondary" type="button">Create account</button>
+                  </div>
+                </form>
+
+                <div id="signedInPanel" class="signed-in-panel is-hidden">
+                  <p id="signedInText" class="signed-in-text"></p>
+                  <div class="auth-actions">
+                    <button id="signOutButton" class="button secondary" type="button">Sign out</button>
+                  </div>
+                </div>
+              </article>
+
+              <div class="panel-footer entry-footer">
+                <p id="saveStatus">Saved locally on this device.</p>
+              </div>
+            </aside>
+
+            <div class="entry-main">
+              <section class="line-group-shell">
+                <div class="group-header">
+                  <div>
+                    <p class="panel-label">Assets</p>
+                    <h2>Cash, ISAs, shares, crypto, and other holdings</h2>
+                  </div>
+                  <p class="group-caption">Balances shown in native currency and GBP</p>
+                </div>
+                <div id="assetLinesGrid" class="line-grid"></div>
+              </section>
+
+              <section class="line-group-shell liabilities-shell">
+                <div class="group-header">
+                  <div>
+                    <p class="panel-label">Liabilities</p>
+                    <h2>Mortgages, cards, loans, and other debts</h2>
+                  </div>
+                  <p class="group-caption">Enter current amount owed</p>
+                </div>
+                <div id="liabilityLinesGrid" class="line-grid"></div>
+              </section>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="insightItemTemplate">
+      <li class="insight-item">
+        <span class="insight-title"></span>
+        <span class="insight-value"></span>
+      </li>
+    </template>
+
+    <script src="./firebase-config.js"></script>
+    <script src="./firebase-service.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
