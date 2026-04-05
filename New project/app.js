@@ -66,7 +66,7 @@
 
   const ISA_ANNUAL_ALLOWANCE_GBP = 20000;
   const LIFETIME_ISA_ALLOWANCE_GBP = 4000;
-  const MARKET_ENDPOINTS = ["/api/market-data", "/.netlify/functions/market-data"];
+  const MARKET_ENDPOINT = "/api/market-data";
 
   const today = new Date();
   const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
@@ -97,7 +97,7 @@
     marketStatus: {
       tone: "muted",
       title: "Market idle",
-      message: "Daily GBP conversion and market prices appear here once Netlify functions are live.",
+      message: "Daily GBP conversion and market prices appear here once the Vercel market function is live.",
     },
     install: {
       available: false,
@@ -1278,12 +1278,12 @@
       render();
     } catch (error) {
       setMarketStatus(
-        "Market refresh failed. Check that the hosting platform published the market-data function.",
+        "Market refresh failed. Check that Vercel published the market-data function.",
         "danger",
         "Refresh failed",
       );
       state.marketData.warnings = [
-        "The market-data function could not be reached.",
+        "The Vercel market-data function could not be reached.",
         "If you just changed files, redeploy the site so the latest backend function goes live.",
       ];
       render();
@@ -1293,32 +1293,19 @@
   }
 
   async function requestMarketData(payload) {
-    let lastError = new Error("No market-data endpoint was available.");
+    const response = await fetch(MARKET_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-    for (let index = 0; index < MARKET_ENDPOINTS.length; index += 1) {
-      const endpoint = MARKET_ENDPOINTS[index];
-
-      try {
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          lastError = new Error(`Market-data endpoint ${endpoint} returned ${response.status}`);
-          continue;
-        }
-
-        return await response.json();
-      } catch (error) {
-        lastError = error;
-      }
+    if (!response.ok) {
+      throw new Error(`Market-data endpoint ${MARKET_ENDPOINT} returned ${response.status}`);
     }
 
-    throw lastError;
+    return await response.json();
   }
 
   function buildMarketRequestPayload() {

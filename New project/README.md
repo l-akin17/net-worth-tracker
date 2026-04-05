@@ -1,119 +1,48 @@
 # Net Worth Tracker
 
-A Firebase-synced finance dashboard for:
+This version is simplified for one hosting path:
 
-- current accounts
-- cash and investment ISAs
-- savings and other bank balances
-- liabilities such as mortgages, cards, loans, and overdrafts
-- crypto and share holdings with refreshed market prices
-- balances stored in other currencies and converted to GBP
+- Vercel for the website and market-data function
+- Firebase for sign-in and synced storage
+- Bank of England, CoinGecko, and Alpha Vantage for refreshable market data
 
-## What it does now
+## Main runtime files
 
-- separates the experience into `Overview` and `Monthly Entry`
-- stores balances month by month
-- supports manual balances and live-priced holdings
-- lets ISA lines store monthly contribution amounts separately from balances
-- converts non-GBP balances into GBP using Bank of England spot-rate data
-- refreshes crypto and share prices through a hosting function
-- keeps data synced across devices with Firebase
-- works as an installable PWA
-- clears the locally cached tracker on sign-out so the next user starts with a blank dashboard
-
-## Main files
-
-- [`index.html`](./index.html): app layout
-- [`styles.css`](./styles.css): visual design
-- [`app.js`](./app.js): state, calculations, charts, sync, market refresh, and PWA install flow
-- [`firebase-config.js`](./firebase-config.js): Firebase web app keys
-- [`firebase-service.js`](./firebase-service.js): Firebase auth and Firestore sync helper
-- [`firestore.rules`](./firestore.rules): private per-user Firestore rules
-- [`manifest.webmanifest`](./manifest.webmanifest): installable app metadata
-- [`service-worker.js`](./service-worker.js): app-shell caching
+- [`index.html`](./index.html): page structure
+- [`styles.css`](./styles.css): app styling
+- [`app.js`](./app.js): tracker logic, charts, syncing, ISA summaries, and market refresh
+- [`firebase-config.js`](./firebase-config.js): your Firebase web app config
+- [`firebase-service.js`](./firebase-service.js): Firebase auth and Firestore sync
+- [`firestore.rules`](./firestore.rules): private user-only data rules
+- [`manifest.webmanifest`](./manifest.webmanifest): install metadata
+- [`service-worker.js`](./service-worker.js): offline shell caching
 - [`icon.svg`](./icon.svg): app icon
-- [`market-data-service.js`](./market-data-service.js): shared Bank of England FX + crypto/share quote logic
-- [`netlify/functions/market-data.js`](./netlify/functions/market-data.js): Netlify function entry point
-- [`api/market-data.js`](./api/market-data.js): Vercel function entry point
-- [`netlify.toml`](./netlify.toml): Netlify config
+- [`market-data-service.js`](./market-data-service.js): shared market and FX fetch logic
+- [`api/market-data.js`](./api/market-data.js): Vercel backend function
+- [`vercel.json`](./vercel.json): explicit Vercel routing and headers
 
-## How balances work
+## What this app does
 
-Each line can be:
+- tracks assets and liabilities by month
+- separates overview and monthly-entry views
+- supports current accounts, savings, ISAs, crypto, shares, and debts
+- supports balances in multiple currencies
+- converts balances to GBP using Bank of England data
+- refreshes crypto and stock prices through a Vercel function
+- tracks ISA balances and tax-year contributions separately
+- clears local data on sign-out so the next user sees a blank tracker
 
-- `manual`: you enter the native-currency balance yourself each month
-- `market`: you store quantity and the app values it using the latest quote
+## Required Vercel environment variables
 
-Examples:
-
-- Barclays Current in GBP: manual
-- Cash ISA in GBP: manual
-- Apple Shares in USD: market
-- Bitcoin in USD: market
-- Mortgage in GBP: manual liability
-
-For ISA tax-year tracking:
-
-- balances and contributions are separate
-- the ISA allowance panel uses the monthly ISA contribution fields, not balance growth
-- the allowance constants in the app are currently set to `£20,000` overall and `£4,000` for Lifetime ISA usage
-
-## Free setup notes
-
-The app stays as free as possible with this setup:
-
-- hosting: Netlify or Vercel
-- login + cloud storage: Firebase Spark plan
-- crypto: CoinGecko demo/free access
-- stocks: Alpha Vantage free API key
-- FX: Bank of England public rates page
-
-## Hosting setup for market refresh
-
-The market refresh feature needs a host that publishes backend functions.
-
-This repo now supports both:
-
-- Netlify via [`netlify/functions/market-data.js`](./netlify/functions/market-data.js)
-- Vercel via [`api/market-data.js`](./api/market-data.js)
-
-Optional but recommended environment variables on either host:
-
-- `COINGECKO_DEMO_API_KEY`
 - `ALPHAVANTAGE_API_KEY`
+- `COINGECKO_DEMO_API_KEY` optional but recommended
 
-Where to add them:
+After changing environment variables in Vercel, redeploy the project.
 
-1. Open your hosting project settings
-2. Open `Environment variables`
-3. Add the variables
-4. Redeploy the site
+## Required Firebase setup
 
-### Why they matter
-
-- Crypto quotes can work better with a CoinGecko demo key
-- Share quotes need an Alpha Vantage key
-- FX conversion does not need a key
-
-## Firebase setup
-
-You still need:
-
-1. Firebase web app config in [`firebase-config.js`](./firebase-config.js)
-2. `Email/Password` enabled in Firebase Authentication
-3. Firestore created in production mode
-4. [`firestore.rules`](./firestore.rules) published
-5. your deployed site domain added to Firebase `Authorized domains`
-
-## PWA install
-
-After deployment:
-
-- on iPhone: open the site in Safari and use `Add to Home Screen`
-- on desktop Chrome/Edge: use the browser install prompt
-
-## Notes on pricing
-
-- The web app itself can stay free on Netlify + Firebase Spark within their free limits
-- Public App Store distribution is not free
-- Free stock APIs are limited, so share prices are best treated as refreshable daily data rather than guaranteed real-time data
+1. Put your real Firebase values into [`firebase-config.js`](./firebase-config.js)
+2. Enable `Email/Password` in Firebase Authentication
+3. Create Firestore
+4. Publish [`firestore.rules`](./firestore.rules)
+5. Add your `*.vercel.app` domain to Firebase `Authorized domains`
