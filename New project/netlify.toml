@@ -1,0 +1,14 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Same path the frontend uses (`/api/market-data`) → Netlify Function
+[[redirects]]
+  from = "/api/market-data"
+  to = "/.netlify/functions/market-data"
+  status = 200
+
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache"
