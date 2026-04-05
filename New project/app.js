@@ -97,7 +97,7 @@
     marketStatus: {
       tone: "muted",
       title: "Market idle",
-      message: "Daily GBP conversion and market prices appear here once the deployed market API is available.",
+      message: "Daily GBP conversion and market prices appear here once the Vercel market function is live.",
     },
     install: {
       available: false,
@@ -1278,13 +1278,13 @@
       render();
     } catch (error) {
       setMarketStatus(
-        "Market refresh failed. Check that the site deploy includes the market-data function (Netlify Functions or Vercel serverless).",
+        "Market refresh failed. Check that Vercel published the market-data function.",
         "danger",
         "Refresh failed",
       );
       state.marketData.warnings = [
-        "The market-data endpoint could not be reached.",
-        "If you just changed files, redeploy the site so the latest serverless function goes live.",
+        "The Vercel market-data function could not be reached.",
+        "If you just changed files, redeploy so the latest serverless function goes live.",
       ];
       render();
     } finally {
